@@ -4,18 +4,24 @@ import { Anime } from '../types'
 import { getAnimeDetails } from '../api/jikan'
 import AnimeCard from '../components/AnimeCard'
 import { usePlayer } from '../context/PlayerContext'
+import { useLang } from '../context/LangContext'
+import { t, tr } from '../i18n/translations'
+import { useWatchlistContext } from '../context/WatchlistContext'
 
 export default function AnimeDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { play } = usePlayer()
+  const { lang } = useLang()
+  const { toggleWatchlist, isInWatchlist } = useWatchlistContext()
+  const T = (key: { zh: string; en: string }) => tr(key, lang)
+
   const [anime, setAnime] = useState<(Anime & { recommendations: Anime[] }) | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!id) return
     setLoading(true)
-    // Jikan rate limit delay
     setTimeout(() => {
       getAnimeDetails(+id)
         .then(d => { setAnime(d); setLoading(false) })
@@ -24,47 +30,44 @@ export default function AnimeDetail() {
     window.scrollTo(0, 0)
   }, [id])
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center pt-16">
-        <div className="w-12 h-12 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
-
+  if (loading) return (
+    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center pt-16">
+      <div className="w-12 h-12 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
   if (!anime) return (
     <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center pt-16">
-      <p className="text-gray-400">Anime not found.</p>
+      <p className="text-gray-400">{lang === 'zh' ? '未找到动漫' : 'Anime not found.'}</p>
     </div>
   )
 
   const title = anime.title_english || anime.title
   const hasTrailer = anime.trailer?.youtube_id
+  const inWatchlist = isInWatchlist(anime.mal_id, 'anime')
+
+  const statusMap: Record<string, string> = {
+    'Finished Airing': lang === 'zh' ? '完结' : 'Finished',
+    'Currently Airing': lang === 'zh' ? '连载中' : 'Airing',
+    'Not yet aired': lang === 'zh' ? '未播出' : 'Not aired',
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] pb-20">
-      {/* Backdrop / top section */}
       <div style={{ background: 'linear-gradient(180deg, #0f0d1a 0%, #0a0a0f 100%)' }} className="pt-24 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col md:flex-row gap-8">
             {/* Poster */}
             <div className="flex-shrink-0">
               <div className="w-48 md:w-56 rounded-2xl overflow-hidden shadow-2xl shadow-purple-900/30 border border-purple-500/10">
-                <img
-                  src={anime.images?.jpg?.large_image_url}
-                  alt={title}
-                  className="w-full"
-                />
+                <img src={anime.images?.jpg?.large_image_url} alt={title} className="w-full" />
               </div>
             </div>
 
             {/* Info */}
             <div className="flex-1">
-              <p className="section-label text-purple-400 mb-2">ANIME</p>
+              <p className="section-label text-purple-400 mb-2">{T(t.detail.anime)}</p>
               <h1 className="text-3xl md:text-5xl font-black text-white mb-2">{title}</h1>
-              {anime.title !== title && (
-                <p className="text-gray-500 mb-4">{anime.title}</p>
-              )}
+              {anime.title !== title && <p className="text-gray-500 mb-4">{anime.title}</p>}
 
               {/* Meta */}
               <div className="flex flex-wrap items-center gap-4 mb-5 text-sm">
@@ -76,10 +79,16 @@ export default function AnimeDetail() {
                   </div>
                 )}
                 {anime.year && <span className="text-gray-400">{anime.year}</span>}
-                {anime.episodes && <span className="text-gray-400">{anime.episodes} episodes</span>}
+                {anime.episodes && (
+                  <span className="text-gray-400">
+                    {anime.episodes} {lang === 'zh' ? '集' : 'episodes'}
+                  </span>
+                )}
                 <span className={`px-2 py-0.5 rounded text-xs font-bold ${
                   anime.status === 'Finished Airing' ? 'bg-gray-700 text-gray-300' : 'bg-purple-500/20 text-purple-400'
-                }`}>{anime.status}</span>
+                }`}>
+                  {statusMap[anime.status] || anime.status}
+                </span>
               </div>
 
               {/* Genres */}
@@ -91,15 +100,14 @@ export default function AnimeDetail() {
                 ))}
               </div>
 
-              {/* Studios */}
+              {/* Studio */}
               {anime.studios?.length > 0 && (
                 <p className="text-gray-400 text-sm mb-5">
-                  <span className="text-gray-600 uppercase text-xs tracking-widest mr-2">Studio</span>
+                  <span className="text-gray-600 uppercase text-xs tracking-widest mr-2">{T(t.detail.studio)}</span>
                   {anime.studios.map(s => s.name).join(', ')}
                 </p>
               )}
 
-              {/* Synopsis */}
               <p className="text-gray-300 text-base leading-relaxed mb-8 max-w-2xl">
                 {anime.synopsis?.replace(/\[Written by.*?\]/, '')}
               </p>
@@ -107,29 +115,29 @@ export default function AnimeDetail() {
               {/* Actions */}
               <div className="flex gap-3 flex-wrap">
                 <button
-                  onClick={() => anime && play({ type: 'anime', id: anime.mal_id, title: anime.title_english || anime.title })}
-                  className="flex items-center gap-2 bg-purple-500 hover:bg-purple-400 text-white font-bold px-6 py-3 rounded-xl transition-all hover:shadow-lg hover:shadow-purple-500/30"
-                >
-                  <svg className="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z" />
+                  onClick={() => play({ type: 'anime', id: anime.mal_id, title })}
+                  className="flex items-center gap-2 bg-purple-500 hover:bg-purple-400 text-white font-bold px-6 py-3 rounded-xl transition-all hover:shadow-lg hover:shadow-purple-500/30">
+                  <svg className="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                  {T(t.detail.watchNow)}
+                </button>
+                <button
+                  onClick={() => toggleWatchlist({ id: anime.mal_id, type: 'anime', title, poster: anime.images?.jpg?.large_image_url || null, score: anime.score || null, year: anime.year?.toString() || null })}
+                  className={`flex items-center gap-2 font-bold px-4 py-3 rounded-xl transition-all border ${
+                    inWatchlist ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-400' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
+                  }`}>
+                  <svg className="w-5 h-5" fill={inWatchlist ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                   </svg>
-                  Watch Now
                 </button>
                 {hasTrailer && (
-                  <a
-                    href={`https://youtube.com/watch?v=${anime.trailer!.youtube_id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 font-bold px-6 py-3 rounded-xl transition-all border border-red-500/20"
-                  >
-                    ▶ Trailer
+                  <a href={`https://youtube.com/watch?v=${anime.trailer!.youtube_id}`} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 font-bold px-6 py-3 rounded-xl transition-all border border-red-500/20">
+                    {T(t.detail.trailer)}
                   </a>
                 )}
-                <button
-                  onClick={() => navigate(-1)}
-                  className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-3 rounded-xl transition-all border border-white/10"
-                >
-                  ← Back
+                <button onClick={() => navigate(-1)}
+                  className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-3 rounded-xl transition-all border border-white/10">
+                  {T(t.detail.back)}
                 </button>
               </div>
             </div>
@@ -140,12 +148,10 @@ export default function AnimeDetail() {
       {/* Recommendations */}
       {anime.recommendations?.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-12">
-          <p className="section-label text-purple-400 mb-2">YOU MIGHT LIKE</p>
-          <h2 className="text-xl font-black text-white mb-6">Recommendations</h2>
+          <p className="section-label text-purple-400 mb-2">{T(t.detail.recsLabel)}</p>
+          <h2 className="text-xl font-black text-white mb-6">{T(t.detail.recs)}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {anime.recommendations.slice(0, 6).map(a => (
-              <AnimeCard key={a.mal_id} anime={a} />
-            ))}
+            {anime.recommendations.slice(0, 6).map(a => <AnimeCard key={a.mal_id} anime={a} />)}
           </div>
         </div>
       )}

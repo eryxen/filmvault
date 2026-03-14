@@ -30,13 +30,14 @@ const getSources = (type: string, id: number | string, season = 1, episode = 1):
     { label: 'SuperEmbed',   url: `https://www.superembed.stream/embed?video_id=${id}&tmdb=1&season=${season}&episode=${episode}` },
   ]
   if (type === 'anime') return [
-    // anime1.me — default, use search embed (title passed via context)
-    { label: 'Anime1.me',    url: `https://anime1.me/?cat=${id}` },
+    // All sources verified to allow iframe embedding
     { label: 'VidSrc Pro',   url: `https://vidsrc.pro/embed/anime/${id}/${episode}` },
     { label: 'VidSrc To',    url: `https://vidsrc.to/embed/anime/${id}/1/${episode}` },
     { label: 'SmashyStream', url: `https://embed.smashystream.com/playere.php?mal=${id}&ep=${episode}` },
+    { label: '2Embed',       url: `https://www.2embed.cc/embedanime/${id}&ep=${episode}` },
     { label: 'VidSrc Me',    url: `https://vidsrc.me/embed/tv?mal=${id}&episode=${episode}` },
   ]
+  // Note: anime1.me blocks iframe (X-Frame-Options). Use the 🎌 external button below.
   return []
 }
 
