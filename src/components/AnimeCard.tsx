@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { Anime } from '../types'
 import { useWatchlistContext } from '../context/WatchlistContext'
+import { useLang } from '../context/LangContext'
+import { t, tr } from '../i18n/translations'
 
 interface Props {
   anime: Anime
@@ -9,6 +11,8 @@ interface Props {
 export default function AnimeCard({ anime }: Props) {
   const navigate = useNavigate()
   const { toggleWatchlist, isInWatchlist } = useWatchlistContext()
+  const { lang } = useLang()
+  const T = (key: { zh: string; en: string }) => tr(key, lang)
   const title = anime.title_english || anime.title
   const inWatchlist = isInWatchlist(anime.mal_id, 'anime')
 
@@ -58,7 +62,7 @@ export default function AnimeCard({ anime }: Props) {
               ? 'bg-yellow-500 text-white scale-110'
               : 'bg-black/60 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-yellow-400'
           }`}
-          title={inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
+          title={inWatchlist ? T(t.card.removeList) : T(t.card.addList)}
         >
           <svg className="w-4 h-4" fill={inWatchlist ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
@@ -87,7 +91,7 @@ export default function AnimeCard({ anime }: Props) {
             onClick={e => { e.stopPropagation(); navigate(`/watch/anime/${anime.mal_id}`) }}
             className="w-full py-2 rounded-xl text-xs font-bold uppercase tracking-wide bg-purple-500 hover:bg-purple-400 text-white transition-all"
           >
-            Watch Now
+            {T(t.card.watchNow)}
           </button>
         </div>
       </div>

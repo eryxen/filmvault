@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom'
 import { Movie, TvShow } from '../types'
 import { getImageUrl } from '../api/tmdb'
 import { useWatchlistContext } from '../context/WatchlistContext'
+import { useLang } from '../context/LangContext'
+import { t, tr } from '../i18n/translations'
 
 interface Props {
   item: Movie | TvShow
@@ -13,6 +15,8 @@ const isMovie = (item: Movie | TvShow): item is Movie => 'title' in item
 export default function MovieCard({ item, type }: Props) {
   const navigate = useNavigate()
   const { toggleWatchlist, isInWatchlist } = useWatchlistContext()
+  const { lang } = useLang()
+  const T = (key: { zh: string; en: string }) => tr(key, lang)
 
   const title = isMovie(item) ? item.title : item.name
   const date = isMovie(item) ? item.release_date : item.first_air_date
@@ -71,7 +75,7 @@ export default function MovieCard({ item, type }: Props) {
               ? 'bg-yellow-500 text-white scale-110'
               : 'bg-black/60 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-yellow-400'
           }`}
-          title={inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
+          title={inWatchlist ? T(t.card.removeList) : T(t.card.addList)}
         >
           <svg className="w-4 h-4" fill={inWatchlist ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
@@ -89,12 +93,12 @@ export default function MovieCard({ item, type }: Props) {
 
         {/* Bottom info */}
         <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-          <p className={`section-label ${accentColor} mb-1`}>{type === 'movie' ? 'MOVIE' : 'TV SHOW'}</p>
+          <p className={`section-label ${accentColor} mb-1`}>{type === 'movie' ? T(t.card.movie) : T(t.card.tvShow)}</p>
           <button
             onClick={e => { e.stopPropagation(); navigate(`/watch/${type}/${item.id}`) }}
             className={`w-full py-2 rounded-xl text-xs font-bold uppercase tracking-wide transition-all text-white ${accentBg}`}
           >
-            Watch Now
+            {T(t.card.watchNow)}
           </button>
         </div>
       </div>

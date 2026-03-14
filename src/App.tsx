@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import { WatchlistProvider } from './context/WatchlistContext'
+import { LangProvider } from './context/LangContext'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import Movies from './pages/Movies'
@@ -13,6 +14,7 @@ import Watchlist from './pages/Watchlist'
 
 export default function App() {
   return (
+    <LangProvider>
     <WatchlistProvider>
       <Routes>
         {/* Watch page — minimal layout */}
@@ -37,5 +39,6 @@ export default function App() {
         } />
       </Routes>
     </WatchlistProvider>
+    </LangProvider>
   )
 }
