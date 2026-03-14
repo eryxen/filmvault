@@ -43,9 +43,9 @@ export default function Watch() {
         <span className="text-gray-600">|</span>
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 rounded bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <span className="text-white font-black text-xs">FV</span>
+            <span className="text-white font-black text-xs">云</span>
           </div>
-          <span className="text-white font-bold text-sm">FilmVault</span>
+          <span className="text-white font-bold text-sm">云影</span>
           <span className={`text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded ${
             watchType === 'movie' ? 'text-blue-400 bg-blue-500/10' :
             watchType === 'tv' ? 'text-green-400 bg-green-500/10' :

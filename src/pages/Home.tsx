@@ -102,7 +102,7 @@ export default function Home() {
             <div className="max-w-xl">
               <p className="section-label text-blue-400 mb-3">TRENDING THIS WEEK</p>
               <h1 className="text-4xl sm:text-6xl font-black text-white leading-tight mb-4">
-                {hero?.title ?? (loading ? '...' : 'Welcome to FilmVault')}
+                {hero?.title ?? (loading ? '...' : 'Welcome to 云影')}
               </h1>
               <p className="text-gray-300 text-base leading-relaxed mb-6 line-clamp-3">
                 {hero?.overview}

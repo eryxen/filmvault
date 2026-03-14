@@ -9,7 +9,7 @@ export interface WatchlistItem {
   year: string | null
 }
 
-const STORAGE_KEY = 'filmvault_watchlist'
+const STORAGE_KEY = '云影_watchlist'
 
 export function useWatchlist() {
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>(() => {

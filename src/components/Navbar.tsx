@@ -26,10 +26,10 @@ export default function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-black text-sm">FV</span>
+              <span className="text-white font-black text-sm">云</span>
             </div>
             <span className="font-black text-white text-lg tracking-tight">
-              Film<span className="text-blue-400">Vault</span>
+              云<span className="text-blue-400">影</span>
             </span>
           </Link>
 
