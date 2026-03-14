@@ -2,48 +2,45 @@ import { useEffect, useState } from 'react'
 import { usePlayer } from '../context/PlayerContext'
 import { useLang } from '../context/LangContext'
 
-// Embed sources — ordered by cleanliness (least ads first)
-// sandbox on iframe blocks popup windows at browser level
-const SOURCES: Record<string, (id: number | string, s?: number, e?: number) => string> = {
-  // 2embed — cleaner, no popups
-  '2embed_movie':  (id) => `https://www.2embed.cc/embed/${id}`,
-  '2embed_tv':     (id, s=1, e=1) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
-  // multiembed — very clean
-  'multi_movie':   (id) => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
-  'multi_tv':      (id, s=1, e=1) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
-  // vidsrc.me (different from vidsrc.to, fewer ads)
-  'vidsrcme_movie': (id) => `https://vidsrc.me/embed/movie?tmdb=${id}`,
-  'vidsrcme_tv':    (id, s=1, e=1) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
-  // anime sources
-  'anime_embed':   (id) => `https://vidsrc.me/embed/tv?tmdb=${id}`,
-}
+// ============================================================
+// Sources curated from open-source projects:
+//   enjoytown (282★), filmify, movie-web ecosystem
+// Ordered: cleanest first. sandbox blocks popup ads.
+// ============================================================
 
-const getSources = (type: string, id: number | string, season = 1, episode = 1): string[] => {
+interface Source { label: string; url: string }
+
+const getSources = (type: string, id: number | string, season = 1, episode = 1): Source[] => {
   if (type === 'movie') return [
-    `https://www.2embed.cc/embed/${id}`,
-    `https://multiembed.mov/?video_id=${id}&tmdb=1`,
-    `https://vidsrc.me/embed/movie?tmdb=${id}`,
-    `https://vidsrc.to/embed/movie/${id}`,
+    { label: 'SuperEmbed',   url: `https://www.superembed.stream/embed?tmdb=${id}` },
+    { label: 'VidSrc Pro',   url: `https://vidsrc.pro/embed/movie/${id}` },
+    { label: 'SmashyStream', url: `https://embed.smashystream.com/playere.php?tmdb=${id}` },
+    { label: '2Embed',       url: `https://www.2embed.cc/embed/${id}` },
+    { label: 'VidSrc Me',    url: `https://vidsrc.me/embed/movie?tmdb=${id}` },
+    { label: 'MultiEmbed',   url: `https://multiembed.mov/?video_id=${id}&tmdb=1` },
   ]
   if (type === 'tv') return [
-    `https://www.2embed.cc/embedtv/${id}&s=${season}&e=${episode}`,
-    `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${season}&e=${episode}`,
-    `https://vidsrc.me/embed/tv?tmdb=${id}&season=${season}&episode=${episode}`,
-    `https://vidsrc.to/embed/tv/${id}/${season}/${episode}`,
+    { label: 'SuperEmbed',   url: `https://www.superembed.stream/embed?tmdb=${id}&season=${season}&episode=${episode}` },
+    { label: 'VidSrc Pro',   url: `https://vidsrc.pro/embed/tv/${id}/${season}/${episode}` },
+    { label: 'SmashyStream', url: `https://embed.smashystream.com/playere.php?tmdb=${id}&season=${season}&episode=${episode}` },
+    { label: '2Embed',       url: `https://www.2embed.cc/embedtv/${id}&s=${season}&e=${episode}` },
+    { label: 'VidSrc Me',    url: `https://vidsrc.me/embed/tv?tmdb=${id}&season=${season}&episode=${episode}` },
+    { label: 'MultiEmbed',   url: `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${season}&e=${episode}` },
   ]
   if (type === 'anime') return [
-    `https://vidsrc.to/embed/anime/${id}/1/${episode}`,
-    `https://9anime.pl/watch/${id}`,
+    { label: 'VidSrc Pro',   url: `https://vidsrc.pro/embed/anime/${id}/${episode}` },
+    { label: 'SmashyStream', url: `https://embed.smashystream.com/playere.php?mal=${id}&ep=${episode}` },
+    { label: 'VidSrc To',    url: `https://vidsrc.to/embed/anime/${id}/1/${episode}` },
+    { label: 'VidSrc Me',    url: `https://vidsrc.me/embed/tv?mal=${id}&episode=${episode}` },
   ]
   return []
 }
 
-const getAlt = (type: string, id: number | string) => {
-  if (type === 'movie') return `https://www.2embed.cc/embed/${id}`
-  if (type === 'tv')    return `https://www.2embed.cc/embedtv/${id}&s=1&e=1`
+const getExternalLink = (type: string, id: number | string) => {
+  if (type === 'movie') return `https://vidsrc.pro/embed/movie/${id}`
+  if (type === 'tv')    return `https://vidsrc.pro/embed/tv/${id}/1/1`
   return `https://anime1.me`
 }
-void SOURCES // suppress unused warning
 
 export default function VideoPlayer() {
   const { playing, close } = usePlayer()
@@ -54,6 +51,7 @@ export default function VideoPlayer() {
   const [loaded, setLoaded] = useState(false)
 
   const sources = playing ? getSources(playing.type, playing.id, season, episode) : []
+  const maxSources = playing?.type === 'anime' ? 4 : 6
 
   useEffect(() => {
     if (playing) {
@@ -68,7 +66,6 @@ export default function VideoPlayer() {
     return () => { document.body.style.overflow = '' }
   }, [playing])
 
-  // Reset iframe on season/episode change
   useEffect(() => {
     setLoaded(false)
     setSrcIndex(0)
@@ -79,57 +76,61 @@ export default function VideoPlayer() {
   const isTV = playing.type === 'tv'
   const isAnime = playing.type === 'anime'
   const typeLabel = playing.type === 'movie'
-    ? (lang === 'zh' ? '电影' : 'Movie')
+    ? (lang === 'zh' ? '电影' : 'MOVIE')
     : playing.type === 'tv'
-    ? (lang === 'zh' ? '剧集' : 'TV Show')
-    : (lang === 'zh' ? '动漫' : 'Anime')
+    ? (lang === 'zh' ? '剧集' : 'TV')
+    : (lang === 'zh' ? '动漫' : 'ANIME')
 
   const accentColor = playing.type === 'movie' ? 'text-blue-400' : playing.type === 'tv' ? 'text-green-400' : 'text-purple-400'
-  const accentBg = playing.type === 'movie' ? 'bg-blue-500' : playing.type === 'tv' ? 'bg-green-500' : 'bg-purple-500'
+  const accentBg    = playing.type === 'movie' ? 'bg-blue-500'   : playing.type === 'tv' ? 'bg-green-500'   : 'bg-purple-500'
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-black">
-      {/* Top Bar */}
+      {/* ── Top Bar ── */}
       <div className="flex items-center gap-3 px-4 py-3 bg-[#0a0a0f]/95 backdrop-blur-sm border-b border-white/5 flex-shrink-0">
         {/* Logo */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <div className="w-6 h-6 rounded bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
             <span className="text-white font-black text-xs">云</span>
           </div>
           <span className="text-white font-black text-sm hidden sm:block">云<span className="text-blue-400">影</span></span>
         </div>
 
-        <span className="text-gray-600 hidden sm:block">|</span>
+        <span className="text-gray-700 hidden sm:block">|</span>
 
-        {/* Title + type */}
+        {/* Title */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <span className={`section-label ${accentColor} text-xs hidden sm:block flex-shrink-0`}>{typeLabel.toUpperCase()}</span>
+          <span className={`section-label ${accentColor} text-xs hidden sm:block flex-shrink-0`}>{typeLabel}</span>
           <span className="text-white font-semibold text-sm truncate">{playing.title}</span>
           {(isTV || isAnime) && (
-            <span className="text-gray-500 text-xs flex-shrink-0">
-              S{season} E{episode}
-            </span>
+            <span className="text-gray-500 text-xs flex-shrink-0">S{season} E{episode}</span>
           )}
         </div>
 
-        {/* Source switcher */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-gray-600 text-xs hidden sm:block mr-1">
-            {lang === 'zh' ? '线路' : 'Source'}
-          </span>
-          {sources.slice(0, playing?.type === 'anime' ? 2 : 4).map((_, i) => (
-            <button key={i} onClick={() => { setSrcIndex(i); setLoaded(false) }}
-              className={`h-7 px-2 rounded-lg text-xs font-bold transition-all ${srcIndex === i ? `${accentBg} text-white` : 'bg-white/10 text-gray-400 hover:bg-white/20'}`}>
-              {i === 0 ? (lang === 'zh' ? '线1' : 'S1') :
-               i === 1 ? (lang === 'zh' ? '线2' : 'S2') :
-               i === 2 ? (lang === 'zh' ? '线3' : 'S3') : (lang === 'zh' ? '线4' : 'S4')}
-            </button>
-          ))}
+        {/* Source switcher — show source name */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <span className="text-gray-600 text-xs mr-1 hidden md:block">{lang === 'zh' ? '线路' : 'Source'}:</span>
+          <div className="flex gap-1 overflow-x-auto max-w-[200px] md:max-w-none">
+            {sources.slice(0, maxSources).map((src, i) => (
+              <button key={i}
+                onClick={() => { setSrcIndex(i); setLoaded(false) }}
+                title={src.label}
+                className={`flex-shrink-0 h-7 px-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                  srcIndex === i
+                    ? `${accentBg} text-white shadow-lg`
+                    : 'bg-white/8 text-gray-400 hover:bg-white/15 hover:text-white border border-white/5'
+                }`}>
+                {/* Mobile: just number; Desktop: name */}
+                <span className="md:hidden">{i + 1}</span>
+                <span className="hidden md:block">{src.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Close */}
         <button onClick={close}
-          className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-all flex-shrink-0 ml-2">
+          className="flex-shrink-0 flex items-center gap-1.5 bg-white/8 hover:bg-red-500/20 hover:text-red-400 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-all border border-white/5 ml-1">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -137,56 +138,59 @@ export default function VideoPlayer() {
         </button>
       </div>
 
-      {/* Main content */}
+      {/* ── Main ── */}
       <div className="flex flex-1 min-h-0">
         {/* Player */}
         <div className="flex-1 relative bg-black">
           {!loaded && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-10">
-              <div className={`w-12 h-12 border-2 border-t-transparent rounded-full animate-spin mb-4 ${accentBg.replace('bg-', 'border-')}`} />
-              <p className="text-gray-400 text-sm">{lang === 'zh' ? '加载中...' : 'Loading...'}</p>
+              <div className={`w-12 h-12 border-2 border-t-transparent rounded-full animate-spin mb-4`}
+                style={{ borderColor: playing.type === 'movie' ? '#3b82f6' : playing.type === 'tv' ? '#10b981' : '#a855f7', borderTopColor: 'transparent' }} />
+              <p className="text-gray-400 text-sm mb-1">{lang === 'zh' ? '加载中...' : 'Loading...'}</p>
+              <p className="text-gray-600 text-xs">{sources[srcIndex]?.label}</p>
             </div>
           )}
           <iframe
             key={`${playing.id}-${season}-${episode}-${srcIndex}`}
-            src={sources[srcIndex]}
+            src={sources[srcIndex]?.url}
             className="w-full h-full"
             frameBorder="0"
             allowFullScreen
             allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
             referrerPolicy="origin"
             onLoad={() => setLoaded(true)}
-            // sandbox blocks popup windows & new tab redirects from iframe content
-            // allow-scripts + allow-same-origin needed for player to work
-            // deliberately OMIT: allow-popups, allow-top-navigation, allow-popups-to-escape-sandbox
+            // sandbox: blocks popup ads & tab hijacking
+            // deliberately OMIT allow-popups, allow-top-navigation
             sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock allow-orientation-lock"
           />
         </div>
 
-        {/* Episode sidebar (TV / Anime only) */}
+        {/* Episode Sidebar — TV / Anime, desktop only */}
         {(isTV || isAnime) && (
-          <div className="w-48 bg-[#0d0d14] border-l border-white/5 flex flex-col flex-shrink-0 hidden lg:flex">
+          <div className="w-52 bg-[#0d0d14] border-l border-white/5 flex flex-col flex-shrink-0 hidden lg:flex">
             <div className="p-3 border-b border-white/5">
-              <p className={`section-label ${accentColor} text-xs mb-1`}>{lang === 'zh' ? '选集' : 'EPISODES'}</p>
+              <p className={`section-label ${accentColor} text-xs mb-3`}>{lang === 'zh' ? '选集' : 'EPISODES'}</p>
               {isTV && (
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-gray-500 text-xs">{lang === 'zh' ? '季' : 'S'}</span>
-                  <div className="flex gap-1 flex-wrap">
-                    {Array.from({ length: 5 }, (_, i) => i + 1).map(s => (
+                <>
+                  <p className="text-gray-600 text-xs mb-1">{lang === 'zh' ? '季' : 'Season'}</p>
+                  <div className="flex gap-1 flex-wrap mb-1">
+                    {[1,2,3,4,5,6,7,8].map(s => (
                       <button key={s} onClick={() => { setSeason(s); setEpisode(1) }}
-                        className={`w-7 h-7 rounded text-xs font-bold transition-all ${season === s ? `${accentBg} text-white` : 'bg-white/10 text-gray-400 hover:bg-white/20'}`}>
+                        className={`w-8 h-7 rounded text-xs font-bold transition-all ${season === s ? `${accentBg} text-white` : 'bg-white/8 text-gray-400 hover:bg-white/15'}`}>
                         {s}
                       </button>
                     ))}
                   </div>
-                </div>
+                </>
               )}
             </div>
             <div className="flex-1 overflow-y-auto p-2">
-              {Array.from({ length: 24 }, (_, i) => i + 1).map(ep => (
+              {Array.from({ length: 50 }, (_, i) => i + 1).map(ep => (
                 <button key={ep} onClick={() => setEpisode(ep)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all mb-1 ${episode === ep ? `${accentBg} text-white font-bold` : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
-                  {lang === 'zh' ? `第 ${ep} 集` : `Episode ${ep}`}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all mb-0.5 ${
+                    episode === ep ? `${accentBg} text-white font-bold` : 'text-gray-500 hover:bg-white/5 hover:text-white'
+                  }`}>
+                  {lang === 'zh' ? `第 ${ep} 集` : `Ep ${ep}`}
                 </button>
               ))}
             </div>
@@ -194,26 +198,26 @@ export default function VideoPlayer() {
         )}
       </div>
 
-      {/* Mobile episode selector for TV */}
+      {/* Mobile episode bar */}
       {(isTV || isAnime) && (
-        <div className="lg:hidden border-t border-white/5 bg-[#0d0d14] px-4 py-2 flex-shrink-0">
-          <div className="flex items-center gap-3 overflow-x-auto pb-1">
-            <span className="text-gray-500 text-xs flex-shrink-0">{lang === 'zh' ? '集数：' : 'EP:'}</span>
+        <div className="lg:hidden border-t border-white/5 bg-[#0d0d14] px-3 py-2 flex-shrink-0">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {isTV && (
               <>
-                <span className="text-gray-600 text-xs flex-shrink-0">{lang === 'zh' ? '季' : 'S'}</span>
+                <span className="text-gray-600 text-xs flex-shrink-0">{lang === 'zh' ? 'S' : 'S'}</span>
                 {[1,2,3,4,5].map(s => (
                   <button key={s} onClick={() => { setSeason(s); setEpisode(1) }}
-                    className={`flex-shrink-0 w-8 h-8 rounded text-xs font-bold transition-all ${season === s ? `${accentBg} text-white` : 'bg-white/10 text-gray-400'}`}>
+                    className={`flex-shrink-0 w-8 h-7 rounded text-xs font-bold ${season === s ? `${accentBg} text-white` : 'bg-white/8 text-gray-400'}`}>
                     {s}
                   </button>
                 ))}
-                <span className="text-gray-600 text-xs flex-shrink-0 ml-2">E</span>
+                <span className="text-gray-700 flex-shrink-0">|</span>
               </>
             )}
-            {Array.from({ length: 24 }, (_, i) => i + 1).map(ep => (
+            <span className="text-gray-600 text-xs flex-shrink-0">{lang === 'zh' ? 'E' : 'E'}</span>
+            {Array.from({ length: 50 }, (_, i) => i + 1).map(ep => (
               <button key={ep} onClick={() => setEpisode(ep)}
-                className={`flex-shrink-0 w-8 h-8 rounded text-xs font-bold transition-all ${episode === ep ? `${accentBg} text-white` : 'bg-white/10 text-gray-400'}`}>
+                className={`flex-shrink-0 w-8 h-7 rounded text-xs font-bold ${episode === ep ? `${accentBg} text-white` : 'bg-white/8 text-gray-400'}`}>
                 {ep}
               </button>
             ))}
@@ -221,14 +225,18 @@ export default function VideoPlayer() {
         </div>
       )}
 
-      {/* Hint */}
-      <div className="bg-[#0a0a0f] border-t border-white/5 px-4 py-2 flex items-center justify-between flex-shrink-0">
-        <p className="text-gray-600 text-xs">
-          {lang === 'zh' ? '弹窗广告已屏蔽 · 播放异常？切换线路试试' : 'Popups blocked · Not playing? Switch source above'}
-        </p>
-        <a href={playing ? getAlt(playing.type, playing.id) : '#'} target="_blank" rel="noopener noreferrer"
-          className="text-xs text-blue-400 hover:text-blue-300 underline">
-          {lang === 'zh' ? '外部播放' : 'Open externally'}
+      {/* ── Footer ── */}
+      <div className="bg-[#080808] border-t border-white/5 px-4 py-2 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <span className="text-green-500 text-xs">🛡 {lang === 'zh' ? '弹窗广告已屏蔽' : 'Popup ads blocked'}</span>
+          <span className="text-gray-700 text-xs hidden sm:block">·</span>
+          <span className="text-gray-600 text-xs hidden sm:block">
+            {lang === 'zh' ? `当前线路: ${sources[srcIndex]?.label}` : `Source: ${sources[srcIndex]?.label}`}
+          </span>
+        </div>
+        <a href={getExternalLink(playing.type, playing.id)} target="_blank" rel="noopener noreferrer"
+          className="text-xs text-gray-500 hover:text-blue-400 transition-colors underline">
+          {lang === 'zh' ? '外部播放 ↗' : 'Open externally ↗'}
         </a>
       </div>
     </div>
