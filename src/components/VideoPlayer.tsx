@@ -12,25 +12,27 @@ interface Source { label: string; url: string }
 
 const getSources = (type: string, id: number | string, season = 1, episode = 1): Source[] => {
   if (type === 'movie') return [
-    { label: 'SuperEmbed',   url: `https://www.superembed.stream/embed?tmdb=${id}` },
+    // VidSrc Pro first — most reliable TMDB ID support
     { label: 'VidSrc Pro',   url: `https://vidsrc.pro/embed/movie/${id}` },
+    { label: 'VidSrc Me',    url: `https://vidsrc.me/embed/movie?tmdb=${id}` },
     { label: 'SmashyStream', url: `https://embed.smashystream.com/playere.php?tmdb=${id}` },
     { label: '2Embed',       url: `https://www.2embed.cc/embed/${id}` },
-    { label: 'VidSrc Me',    url: `https://vidsrc.me/embed/movie?tmdb=${id}` },
     { label: 'MultiEmbed',   url: `https://multiembed.mov/?video_id=${id}&tmdb=1` },
+    // SuperEmbed last — needs IMDB ID, may 404 on new releases
+    { label: 'SuperEmbed',   url: `https://www.superembed.stream/embed?video_id=${id}&tmdb=1` },
   ]
   if (type === 'tv') return [
-    { label: 'SuperEmbed',   url: `https://www.superembed.stream/embed?tmdb=${id}&season=${season}&episode=${episode}` },
     { label: 'VidSrc Pro',   url: `https://vidsrc.pro/embed/tv/${id}/${season}/${episode}` },
+    { label: 'VidSrc Me',    url: `https://vidsrc.me/embed/tv?tmdb=${id}&season=${season}&episode=${episode}` },
     { label: 'SmashyStream', url: `https://embed.smashystream.com/playere.php?tmdb=${id}&season=${season}&episode=${episode}` },
     { label: '2Embed',       url: `https://www.2embed.cc/embedtv/${id}&s=${season}&e=${episode}` },
-    { label: 'VidSrc Me',    url: `https://vidsrc.me/embed/tv?tmdb=${id}&season=${season}&episode=${episode}` },
     { label: 'MultiEmbed',   url: `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${season}&e=${episode}` },
+    { label: 'SuperEmbed',   url: `https://www.superembed.stream/embed?video_id=${id}&tmdb=1&season=${season}&episode=${episode}` },
   ]
   if (type === 'anime') return [
     { label: 'VidSrc Pro',   url: `https://vidsrc.pro/embed/anime/${id}/${episode}` },
-    { label: 'SmashyStream', url: `https://embed.smashystream.com/playere.php?mal=${id}&ep=${episode}` },
     { label: 'VidSrc To',    url: `https://vidsrc.to/embed/anime/${id}/1/${episode}` },
+    { label: 'SmashyStream', url: `https://embed.smashystream.com/playere.php?mal=${id}&ep=${episode}` },
     { label: 'VidSrc Me',    url: `https://vidsrc.me/embed/tv?mal=${id}&episode=${episode}` },
   ]
   return []
@@ -51,7 +53,17 @@ export default function VideoPlayer() {
   const [loaded, setLoaded] = useState(false)
 
   const sources = playing ? getSources(playing.type, playing.id, season, episode) : []
-  const maxSources = playing?.type === 'anime' ? 4 : 6
+  const maxSources = sources.length
+  const [showFailHint, setShowFailHint] = useState(false)
+  const [loadTimer, setLoadTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
+
+  const tryNextSource = () => {
+    if (srcIndex < sources.length - 1) {
+      setSrcIndex(i => i + 1)
+      setLoaded(false)
+      setShowFailHint(false)
+    }
+  }
 
   useEffect(() => {
     if (playing) {
@@ -59,6 +71,7 @@ export default function VideoPlayer() {
       setEpisode(playing.episode || 1)
       setSrcIndex(0)
       setLoaded(false)
+      setShowFailHint(false)
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = ''
@@ -69,7 +82,19 @@ export default function VideoPlayer() {
   useEffect(() => {
     setLoaded(false)
     setSrcIndex(0)
+    setShowFailHint(false)
   }, [season, episode])
+
+  // Show "try next" hint if not loaded after 12 seconds
+  useEffect(() => {
+    setShowFailHint(false)
+    if (loadTimer) clearTimeout(loadTimer)
+    if (!loaded) {
+      const t = setTimeout(() => setShowFailHint(true), 12000)
+      setLoadTimer(t)
+      return () => clearTimeout(t)
+    }
+  }, [srcIndex, loaded, season, episode])
 
   if (!playing) return null
 
@@ -144,10 +169,41 @@ export default function VideoPlayer() {
         <div className="flex-1 relative bg-black">
           {!loaded && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-10">
-              <div className={`w-12 h-12 border-2 border-t-transparent rounded-full animate-spin mb-4`}
-                style={{ borderColor: playing.type === 'movie' ? '#3b82f6' : playing.type === 'tv' ? '#10b981' : '#a855f7', borderTopColor: 'transparent' }} />
-              <p className="text-gray-400 text-sm mb-1">{lang === 'zh' ? '加载中...' : 'Loading...'}</p>
-              <p className="text-gray-600 text-xs">{sources[srcIndex]?.label}</p>
+              {!showFailHint ? (
+                <>
+                  <div className={`w-12 h-12 border-2 border-t-transparent rounded-full animate-spin mb-4`}
+                    style={{ borderColor: playing.type === 'movie' ? '#3b82f6' : playing.type === 'tv' ? '#10b981' : '#a855f7', borderTopColor: 'transparent' }} />
+                  <p className="text-gray-400 text-sm mb-1">{lang === 'zh' ? '加载中...' : 'Loading...'}</p>
+                  <p className="text-gray-600 text-xs">{sources[srcIndex]?.label}</p>
+                </>
+              ) : (
+                /* Auto fail hint — shown after 12s if nothing loads */
+                <div className="text-center px-8">
+                  <div className="text-4xl mb-4">⚠️</div>
+                  <p className="text-white font-bold text-lg mb-2">
+                    {lang === 'zh' ? `${sources[srcIndex]?.label} 无法播放` : `${sources[srcIndex]?.label} failed to load`}
+                  </p>
+                  <p className="text-gray-400 text-sm mb-6">
+                    {lang === 'zh' ? '该线路暂无此片源，试试下一条线路' : 'This source may not have this title yet'}
+                  </p>
+                  {srcIndex < sources.length - 1 ? (
+                    <button onClick={tryNextSource}
+                      className={`${playing.type === 'movie' ? 'bg-blue-500 hover:bg-blue-400' : playing.type === 'tv' ? 'bg-green-500 hover:bg-green-400' : 'bg-purple-500 hover:bg-purple-400'} text-white font-bold px-6 py-3 rounded-xl transition-all text-sm`}>
+                      {lang === 'zh' ? `切换到 ${sources[srcIndex + 1]?.label} →` : `Try ${sources[srcIndex + 1]?.label} →`}
+                    </button>
+                  ) : (
+                    <p className="text-gray-500 text-sm">{lang === 'zh' ? '已尝试所有线路' : 'All sources tried'}</p>
+                  )}
+                  <div className="flex gap-2 justify-center mt-4 flex-wrap">
+                    {sources.map((src, i) => i !== srcIndex && (
+                      <button key={i} onClick={() => { setSrcIndex(i); setLoaded(false); setShowFailHint(false) }}
+                        className="bg-white/10 hover:bg-white/20 text-gray-300 text-xs font-medium px-3 py-1.5 rounded-lg transition-all">
+                        {src.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <iframe
