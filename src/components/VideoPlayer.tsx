@@ -2,19 +2,48 @@ import { useEffect, useState } from 'react'
 import { usePlayer } from '../context/PlayerContext'
 import { useLang } from '../context/LangContext'
 
-// Free embed sources
-const getSrc = (type: string, id: number | string, season = 1, episode = 1) => {
-  if (type === 'movie') return `https://vidsrc.to/embed/movie/${id}`
-  if (type === 'tv')    return `https://vidsrc.to/embed/tv/${id}/${season}/${episode}`
-  if (type === 'anime') return `https://vidsrc.to/embed/anime/${id}/1/1`
-  return ''
+// Embed sources — ordered by cleanliness (least ads first)
+// sandbox on iframe blocks popup windows at browser level
+const SOURCES: Record<string, (id: number | string, s?: number, e?: number) => string> = {
+  // 2embed — cleaner, no popups
+  '2embed_movie':  (id) => `https://www.2embed.cc/embed/${id}`,
+  '2embed_tv':     (id, s=1, e=1) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
+  // multiembed — very clean
+  'multi_movie':   (id) => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
+  'multi_tv':      (id, s=1, e=1) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
+  // vidsrc.me (different from vidsrc.to, fewer ads)
+  'vidsrcme_movie': (id) => `https://vidsrc.me/embed/movie?tmdb=${id}`,
+  'vidsrcme_tv':    (id, s=1, e=1) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
+  // anime sources
+  'anime_embed':   (id) => `https://vidsrc.me/embed/tv?tmdb=${id}`,
+}
+
+const getSources = (type: string, id: number | string, season = 1, episode = 1): string[] => {
+  if (type === 'movie') return [
+    `https://www.2embed.cc/embed/${id}`,
+    `https://multiembed.mov/?video_id=${id}&tmdb=1`,
+    `https://vidsrc.me/embed/movie?tmdb=${id}`,
+    `https://vidsrc.to/embed/movie/${id}`,
+  ]
+  if (type === 'tv') return [
+    `https://www.2embed.cc/embedtv/${id}&s=${season}&e=${episode}`,
+    `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${season}&e=${episode}`,
+    `https://vidsrc.me/embed/tv?tmdb=${id}&season=${season}&episode=${episode}`,
+    `https://vidsrc.to/embed/tv/${id}/${season}/${episode}`,
+  ]
+  if (type === 'anime') return [
+    `https://vidsrc.to/embed/anime/${id}/1/${episode}`,
+    `https://9anime.pl/watch/${id}`,
+  ]
+  return []
 }
 
 const getAlt = (type: string, id: number | string) => {
-  if (type === 'movie') return `https://vidbox.cc/movie/${id}`
-  if (type === 'tv')    return `https://vidbox.cc/tv/${id}`
+  if (type === 'movie') return `https://www.2embed.cc/embed/${id}`
+  if (type === 'tv')    return `https://www.2embed.cc/embedtv/${id}&s=1&e=1`
   return `https://anime1.me`
 }
+void SOURCES // suppress unused warning
 
 export default function VideoPlayer() {
   const { playing, close } = usePlayer()
@@ -24,10 +53,7 @@ export default function VideoPlayer() {
   const [srcIndex, setSrcIndex] = useState(0)
   const [loaded, setLoaded] = useState(false)
 
-  const sources = playing ? [
-    getSrc(playing.type, playing.id, season, episode),
-    playing.type !== 'anime' ? getAlt(playing.type, playing.id) : 'https://anime1.me',
-  ] : []
+  const sources = playing ? getSources(playing.type, playing.id, season, episode) : []
 
   useEffect(() => {
     if (playing) {
@@ -87,14 +113,16 @@ export default function VideoPlayer() {
         </div>
 
         {/* Source switcher */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-gray-600 text-xs hidden sm:block">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span className="text-gray-600 text-xs hidden sm:block mr-1">
             {lang === 'zh' ? '线路' : 'Source'}
           </span>
-          {sources.map((_, i) => (
+          {sources.slice(0, playing?.type === 'anime' ? 2 : 4).map((_, i) => (
             <button key={i} onClick={() => { setSrcIndex(i); setLoaded(false) }}
-              className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${srcIndex === i ? `${accentBg} text-white` : 'bg-white/10 text-gray-400 hover:bg-white/20'}`}>
-              {i + 1}
+              className={`h-7 px-2 rounded-lg text-xs font-bold transition-all ${srcIndex === i ? `${accentBg} text-white` : 'bg-white/10 text-gray-400 hover:bg-white/20'}`}>
+              {i === 0 ? (lang === 'zh' ? '线1' : 'S1') :
+               i === 1 ? (lang === 'zh' ? '线2' : 'S2') :
+               i === 2 ? (lang === 'zh' ? '线3' : 'S3') : (lang === 'zh' ? '线4' : 'S4')}
             </button>
           ))}
         </div>
@@ -128,6 +156,10 @@ export default function VideoPlayer() {
             allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
             referrerPolicy="origin"
             onLoad={() => setLoaded(true)}
+            // sandbox blocks popup windows & new tab redirects from iframe content
+            // allow-scripts + allow-same-origin needed for player to work
+            // deliberately OMIT: allow-popups, allow-top-navigation, allow-popups-to-escape-sandbox
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock allow-orientation-lock"
           />
         </div>
 
@@ -192,9 +224,9 @@ export default function VideoPlayer() {
       {/* Hint */}
       <div className="bg-[#0a0a0f] border-t border-white/5 px-4 py-2 flex items-center justify-between flex-shrink-0">
         <p className="text-gray-600 text-xs">
-          {lang === 'zh' ? '播放异常？切换上方线路 1 / 2 试试' : "Can't play? Try switching Source 1 / 2 above"}
+          {lang === 'zh' ? '弹窗广告已屏蔽 · 播放异常？切换线路试试' : 'Popups blocked · Not playing? Switch source above'}
         </p>
-        <a href={sources[1]} target="_blank" rel="noopener noreferrer"
+        <a href={playing ? getAlt(playing.type, playing.id) : '#'} target="_blank" rel="noopener noreferrer"
           className="text-xs text-blue-400 hover:text-blue-300 underline">
           {lang === 'zh' ? '外部播放' : 'Open externally'}
         </a>
