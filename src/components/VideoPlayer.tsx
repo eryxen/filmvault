@@ -30,6 +30,8 @@ const getSources = (type: string, id: number | string, season = 1, episode = 1):
     { label: 'SuperEmbed',   url: `https://www.superembed.stream/embed?video_id=${id}&tmdb=1&season=${season}&episode=${episode}` },
   ]
   if (type === 'anime') return [
+    // anime1.me — default, use search embed (title passed via context)
+    { label: 'Anime1.me',    url: `https://anime1.me/?cat=${id}` },
     { label: 'VidSrc Pro',   url: `https://vidsrc.pro/embed/anime/${id}/${episode}` },
     { label: 'VidSrc To',    url: `https://vidsrc.to/embed/anime/${id}/1/${episode}` },
     { label: 'SmashyStream', url: `https://embed.smashystream.com/playere.php?mal=${id}&ep=${episode}` },
@@ -38,10 +40,13 @@ const getSources = (type: string, id: number | string, season = 1, episode = 1):
   return []
 }
 
-const getExternalLink = (type: string, id: number | string) => {
+const getExternalLink = (type: string, id: number | string, title?: string) => {
   if (type === 'movie') return `https://vidsrc.pro/embed/movie/${id}`
   if (type === 'tv')    return `https://vidsrc.pro/embed/tv/${id}/1/1`
-  return `https://anime1.me`
+  // anime1.me search by title
+  return title
+    ? `https://anime1.me/?s=${encodeURIComponent(title)}`
+    : `https://anime1.me/?cat=${id}`
 }
 
 export default function VideoPlayer() {
@@ -201,6 +206,13 @@ export default function VideoPlayer() {
                         {src.label}
                       </button>
                     ))}
+                    {playing.type === 'anime' && (
+                      <a href={getExternalLink('anime', playing.id, playing.title)}
+                        target="_blank" rel="noopener noreferrer"
+                        className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-all border border-purple-500/20">
+                        🎌 anime1.me ↗
+                      </a>
+                    )}
                   </div>
                 </div>
               )}
@@ -290,10 +302,20 @@ export default function VideoPlayer() {
             {lang === 'zh' ? `当前线路: ${sources[srcIndex]?.label}` : `Source: ${sources[srcIndex]?.label}`}
           </span>
         </div>
-        <a href={getExternalLink(playing.type, playing.id)} target="_blank" rel="noopener noreferrer"
-          className="text-xs text-gray-500 hover:text-blue-400 transition-colors underline">
-          {lang === 'zh' ? '外部播放 ↗' : 'Open externally ↗'}
-        </a>
+        <div className="flex items-center gap-3">
+          {/* Prominent anime1.me button for anime */}
+          {playing.type === 'anime' && (
+            <a href={getExternalLink('anime', playing.id, playing.title)}
+              target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 text-xs font-bold px-3 py-1.5 rounded-lg transition-all border border-purple-500/20">
+              🎌 anime1.me ↗
+            </a>
+          )}
+          <a href={getExternalLink(playing.type, playing.id, playing.title)} target="_blank" rel="noopener noreferrer"
+            className="text-xs text-gray-500 hover:text-blue-400 transition-colors underline">
+            {lang === 'zh' ? '外部播放 ↗' : 'Open externally ↗'}
+          </a>
+        </div>
       </div>
     </div>
   )
