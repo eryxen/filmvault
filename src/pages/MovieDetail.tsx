@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Movie, TvShow } from '../types'
 import { getMovieDetails, getTvDetails, getImageUrl } from '../api/tmdb'
 import MovieCard from '../components/MovieCard'
+import { usePlayer } from '../context/PlayerContext'
 
 interface Props {
   type: 'movie' | 'tv'
@@ -11,6 +12,7 @@ interface Props {
 export default function MovieDetail({ type }: Props) {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { play } = usePlayer()
   const [item, setItem] = useState<Movie & { similar?: Movie[] } | TvShow & { similar?: TvShow[] } | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -119,8 +121,8 @@ export default function MovieDetail({ type }: Props) {
             {/* Actions */}
             <div className="flex gap-3 flex-wrap">
               <button
-                onClick={() => navigate(`/watch/${type}/${id}`)}
-                className={`flex items-center gap-2 ${accentBg} text-white font-bold px-6 py-3 rounded-xl transition-all`}
+                onClick={() => item && play({ type, id: item.id, title })}
+                className={`flex items-center gap-2 ${accentBg} text-white font-bold px-6 py-3 rounded-xl transition-all hover:shadow-lg`}
               >
                 <svg className="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />

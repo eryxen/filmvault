@@ -7,12 +7,14 @@ import MovieCard from '../components/MovieCard'
 import AnimeCard from '../components/AnimeCard'
 import SkeletonCard from '../components/SkeletonCard'
 import { useWatchlistContext } from '../context/WatchlistContext'
+import { usePlayer } from '../context/PlayerContext'
 import { useLang } from '../context/LangContext'
 import { t, tr } from '../i18n/translations'
 
 export default function Home() {
   const navigate = useNavigate()
   const { watchlist, toggleWatchlist, isInWatchlist } = useWatchlistContext()
+  const { play } = usePlayer()
   const { lang } = useLang()
   const T = (key: { zh: string; en: string }) => tr(key, lang)
 
@@ -113,7 +115,7 @@ export default function Home() {
                 {hero?.release_date && <span className="text-gray-400 text-sm">{hero.release_date.slice(0, 4)}</span>}
               </div>
               <div className="flex gap-3 flex-wrap">
-                <button onClick={() => hero && navigate(`/watch/movie/${hero.id}`)}
+                <button onClick={() => hero && play({ type: 'movie', id: hero.id, title: hero.title })}
                   className="flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white font-bold px-6 py-3 rounded-xl transition-all hover:shadow-lg hover:shadow-blue-500/30">
                   <svg className="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                   {T(t.hero.watchNow)}
@@ -177,20 +179,20 @@ export default function Home() {
                 score={dailyMovie.vote_average} year={dailyMovie.release_date?.slice(0,4)}
                 label={T(t.daily.movieOfDay)} accent="blue"
                 onClick={() => navigate(`/movie/${dailyMovie.id}`)}
-                onWatch={() => navigate(`/watch/movie/${dailyMovie.id}`)} />}
+                onWatch={() => play({ type: 'movie', id: dailyMovie.id, title: dailyMovie.title })} />}
               {dailyTv && <DailyCard title={(dailyTv as TvShow).name} overview={dailyTv.overview}
                 backdrop={dailyTv.backdrop_path} poster={dailyTv.poster_path}
                 score={dailyTv.vote_average} year={(dailyTv as TvShow).first_air_date?.slice(0,4)}
                 label={T(t.daily.tvOfDay)} accent="green"
                 onClick={() => navigate(`/tv/${dailyTv.id}`)}
-                onWatch={() => navigate(`/watch/tv/${dailyTv.id}`)} />}
+                onWatch={() => play({ type: 'tv', id: dailyTv.id, title: (dailyTv as TvShow).name })} />}
               {dailyAnime && <DailyCard title={dailyAnime.title_english || dailyAnime.title}
                 overview={dailyAnime.synopsis?.slice(0,200) + '...' || ''} backdrop={null}
                 poster={dailyAnime.images?.jpg?.large_image_url || null}
                 score={dailyAnime.score} year={dailyAnime.year?.toString()}
                 label={T(t.daily.animeOfDay)} accent="purple"
                 onClick={() => navigate(`/anime/${dailyAnime.mal_id}`)}
-                onWatch={() => navigate(`/watch/anime/${dailyAnime.mal_id}`)} />}
+                onWatch={() => play({ type: 'anime', id: dailyAnime.mal_id, title: dailyAnime.title_english || dailyAnime.title })} />}
             </div>
           </div>
         </section>

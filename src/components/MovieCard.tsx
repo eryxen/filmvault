@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { Movie, TvShow } from '../types'
 import { getImageUrl } from '../api/tmdb'
 import { useWatchlistContext } from '../context/WatchlistContext'
+import { usePlayer } from '../context/PlayerContext'
 import { useLang } from '../context/LangContext'
 import { t, tr } from '../i18n/translations'
 
@@ -15,6 +16,7 @@ const isMovie = (item: Movie | TvShow): item is Movie => 'title' in item
 export default function MovieCard({ item, type }: Props) {
   const navigate = useNavigate()
   const { toggleWatchlist, isInWatchlist } = useWatchlistContext()
+  const { play } = usePlayer()
   const { lang } = useLang()
   const T = (key: { zh: string; en: string }) => tr(key, lang)
 
@@ -83,8 +85,9 @@ export default function MovieCard({ item, type }: Props) {
         </button>
 
         {/* Play overlay */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          onClick={e => { e.stopPropagation(); play({ type, id: item.id, title }) }}>
+          <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 hover:scale-110 transition-transform">
             <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
             </svg>
@@ -95,7 +98,7 @@ export default function MovieCard({ item, type }: Props) {
         <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
           <p className={`section-label ${accentColor} mb-1`}>{type === 'movie' ? T(t.card.movie) : T(t.card.tvShow)}</p>
           <button
-            onClick={e => { e.stopPropagation(); navigate(`/watch/${type}/${item.id}`) }}
+            onClick={e => { e.stopPropagation(); play({ type, id: item.id, title }) }}
             className={`w-full py-2 rounded-xl text-xs font-bold uppercase tracking-wide transition-all text-white ${accentBg}`}
           >
             {T(t.card.watchNow)}

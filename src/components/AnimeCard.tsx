@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Anime } from '../types'
 import { useWatchlistContext } from '../context/WatchlistContext'
+import { usePlayer } from '../context/PlayerContext'
 import { useLang } from '../context/LangContext'
 import { t, tr } from '../i18n/translations'
 
@@ -11,6 +12,7 @@ interface Props {
 export default function AnimeCard({ anime }: Props) {
   const navigate = useNavigate()
   const { toggleWatchlist, isInWatchlist } = useWatchlistContext()
+  const { play } = usePlayer()
   const { lang } = useLang()
   const T = (key: { zh: string; en: string }) => tr(key, lang)
   const title = anime.title_english || anime.title
@@ -77,8 +79,9 @@ export default function AnimeCard({ anime }: Props) {
         )}
 
         {/* Play */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          onClick={e => { e.stopPropagation(); play({ type: 'anime', id: anime.mal_id, title }) }}>
+          <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 hover:scale-110 transition-transform">
             <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
             </svg>
@@ -88,11 +91,12 @@ export default function AnimeCard({ anime }: Props) {
         <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
           <p className="section-label text-purple-400 mb-1">ANIME</p>
           <button
-            onClick={e => { e.stopPropagation(); navigate(`/watch/anime/${anime.mal_id}`) }}
+            onClick={e => { e.stopPropagation(); play({ type: 'anime', id: anime.mal_id, title }) }}
             className="w-full py-2 rounded-xl text-xs font-bold uppercase tracking-wide bg-purple-500 hover:bg-purple-400 text-white transition-all"
           >
             {T(t.card.watchNow)}
           </button>
+
         </div>
       </div>
 

@@ -3,10 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Anime } from '../types'
 import { getAnimeDetails } from '../api/jikan'
 import AnimeCard from '../components/AnimeCard'
+import { usePlayer } from '../context/PlayerContext'
 
 export default function AnimeDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { play } = usePlayer()
   const [anime, setAnime] = useState<(Anime & { recommendations: Anime[] }) | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -105,7 +107,7 @@ export default function AnimeDetail() {
               {/* Actions */}
               <div className="flex gap-3 flex-wrap">
                 <button
-                  onClick={() => navigate(`/watch/anime/${id}`)}
+                  onClick={() => anime && play({ type: 'anime', id: anime.mal_id, title: anime.title_english || anime.title })}
                   className="flex items-center gap-2 bg-purple-500 hover:bg-purple-400 text-white font-bold px-6 py-3 rounded-xl transition-all hover:shadow-lg hover:shadow-purple-500/30"
                 >
                   <svg className="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
