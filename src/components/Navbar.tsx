@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useWatchlistContext } from '../context/WatchlistContext'
 
 export default function Navbar() {
   const [query, setQuery] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+  const { watchlist } = useWatchlistContext()
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,6 +59,17 @@ export default function Navbar() {
             >
               Anime
             </Link>
+            <Link
+              to="/watchlist"
+              className={`relative text-sm font-medium transition-colors ${isActive('/watchlist') ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}
+            >
+              Watchlist
+              {watchlist.length > 0 && (
+                <span className="absolute -top-2 -right-3 bg-yellow-500 text-black text-xs font-black rounded-full w-4 h-4 flex items-center justify-center">
+                  {watchlist.length > 9 ? '9+' : watchlist.length}
+                </span>
+              )}
+            </Link>
           </div>
 
           {/* Search */}
@@ -99,6 +112,9 @@ export default function Navbar() {
           <Link to="/movies" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-blue-400 hover:text-blue-300 py-2">Movies</Link>
           <Link to="/tv" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-green-400 hover:text-green-300 py-2">TV Shows</Link>
           <Link to="/anime" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-purple-400 hover:text-purple-300 py-2">Anime</Link>
+          <Link to="/watchlist" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-yellow-400 hover:text-yellow-300 py-2">
+            🔖 Watchlist {watchlist.length > 0 && `(${watchlist.length})`}
+          </Link>
           <form onSubmit={handleSearch} className="pt-2">
             <input
               type="text"

@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
+import { WatchlistProvider } from './context/WatchlistContext'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import Movies from './pages/Movies'
@@ -8,12 +9,13 @@ import MovieDetail from './pages/MovieDetail'
 import AnimeDetail from './pages/AnimeDetail'
 import Watch from './pages/Watch'
 import Search from './pages/Search'
+import Watchlist from './pages/Watchlist'
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <WatchlistProvider>
       <Routes>
-        {/* Watch page has its own minimal layout */}
+        {/* Watch page — minimal layout */}
         <Route path="/watch/:type/:id" element={<Watch />} />
 
         {/* Main app with Navbar */}
@@ -28,11 +30,12 @@ export default function App() {
               <Route path="/movie/:id" element={<MovieDetail type="movie" />} />
               <Route path="/tv/:id" element={<MovieDetail type="tv" />} />
               <Route path="/anime/:id" element={<AnimeDetail />} />
+              <Route path="/watchlist" element={<Watchlist />} />
               <Route path="/search" element={<Search />} />
             </Routes>
           </>
         } />
       </Routes>
-    </div>
+    </WatchlistProvider>
   )
 }
