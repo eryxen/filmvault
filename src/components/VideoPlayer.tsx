@@ -12,38 +12,41 @@ interface Source { label: string; url: string }
 
 const getSources = (type: string, id: number | string, season = 1, episode = 1): Source[] => {
   if (type === 'movie') return [
-    // VidSrc Pro first — most reliable TMDB ID support
-    { label: 'VidSrc Pro',   url: `https://vidsrc.pro/embed/movie/${id}` },
+    // Tested 2026-03-15 — all returning 200
+    { label: 'VidSrc XYZ',   url: `https://vidsrc.xyz/embed/movie/${id}` },
     { label: 'VidSrc Me',    url: `https://vidsrc.me/embed/movie?tmdb=${id}` },
+    { label: 'VidLink',      url: `https://vidlink.pro/movie/${id}` },
     { label: 'SmashyStream', url: `https://embed.smashystream.com/playere.php?tmdb=${id}` },
-    { label: '2Embed',       url: `https://www.2embed.cc/embed/${id}` },
+    { label: 'AutoEmbed',    url: `https://autoembed.co/movie/tmdb/${id}` },
     { label: 'MultiEmbed',   url: `https://multiembed.mov/?video_id=${id}&tmdb=1` },
-    // SuperEmbed last — needs IMDB ID, may 404 on new releases
-    { label: 'SuperEmbed',   url: `https://www.superembed.stream/embed?video_id=${id}&tmdb=1` },
+    { label: 'VidSrc ICU',   url: `https://vidsrc.icu/embed/movie/${id}` },
+    { label: 'MoviesAPI',    url: `https://moviesapi.club/movie/${id}` },
   ]
   if (type === 'tv') return [
-    { label: 'VidSrc Pro',   url: `https://vidsrc.pro/embed/tv/${id}/${season}/${episode}` },
+    { label: 'VidSrc XYZ',   url: `https://vidsrc.xyz/embed/tv/${id}/${season}/${episode}` },
     { label: 'VidSrc Me',    url: `https://vidsrc.me/embed/tv?tmdb=${id}&season=${season}&episode=${episode}` },
+    { label: 'VidLink',      url: `https://vidlink.pro/tv/${id}/${season}/${episode}` },
     { label: 'SmashyStream', url: `https://embed.smashystream.com/playere.php?tmdb=${id}&season=${season}&episode=${episode}` },
-    { label: '2Embed',       url: `https://www.2embed.cc/embedtv/${id}&s=${season}&e=${episode}` },
+    { label: 'AutoEmbed',    url: `https://autoembed.co/tv/tmdb/${id}-${season}-${episode}` },
     { label: 'MultiEmbed',   url: `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${season}&e=${episode}` },
-    { label: 'SuperEmbed',   url: `https://www.superembed.stream/embed?video_id=${id}&tmdb=1&season=${season}&episode=${episode}` },
+    { label: 'VidSrc ICU',   url: `https://vidsrc.icu/embed/tv/${id}/${season}/${episode}` },
+    { label: 'MoviesAPI',    url: `https://moviesapi.club/tv/${id}-${season}-${episode}` },
   ]
   if (type === 'anime') return [
-    // All sources verified to allow iframe embedding
-    { label: 'VidSrc Pro',   url: `https://vidsrc.pro/embed/anime/${id}/${episode}` },
-    { label: 'VidSrc To',    url: `https://vidsrc.to/embed/anime/${id}/1/${episode}` },
+    // Tested 2026-03-15 — anime-compatible sources
+    { label: 'VidSrc ICU',   url: `https://vidsrc.icu/embed/anime/${id}/${episode}` },
     { label: 'SmashyStream', url: `https://embed.smashystream.com/playere.php?mal=${id}&ep=${episode}` },
-    { label: '2Embed',       url: `https://www.2embed.cc/embedanime/${id}&ep=${episode}` },
     { label: 'VidSrc Me',    url: `https://vidsrc.me/embed/tv?mal=${id}&episode=${episode}` },
+    { label: 'MultiEmbed',   url: `https://multiembed.mov/?video_id=${id}&tmdb=1` },
+    { label: 'VidSrc To',    url: `https://vidsrc.to/embed/anime/${id}/1/${episode}` },
   ]
   // Note: anime1.me blocks iframe (X-Frame-Options). Use the 🎌 external button below.
   return []
 }
 
 const getExternalLink = (type: string, id: number | string, title?: string) => {
-  if (type === 'movie') return `https://vidsrc.pro/embed/movie/${id}`
-  if (type === 'tv')    return `https://vidsrc.pro/embed/tv/${id}/1/1`
+  if (type === 'movie') return `https://vidsrc.xyz/embed/movie/${id}`
+  if (type === 'tv')    return `https://vidsrc.xyz/embed/tv/${id}/1/1`
   // anime1.me search by title
   return title
     ? `https://anime1.me/?s=${encodeURIComponent(title)}`

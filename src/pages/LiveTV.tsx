@@ -95,7 +95,7 @@ export default function LiveTV() {
           <p className="section-label text-red-400 mb-2">{T({ zh: '直播', en: 'LIVE' })}</p>
           <h1 className="text-4xl font-black text-white mb-2">{T({ zh: '电视直播', en: 'Live TV' })}</h1>
           <p className="text-gray-500 text-sm">
-            {T({ zh: `${groups.reduce((s, g) => s + g.channels.length, 0)} 个频道 · 来自 zbefine/iptv`, en: `${groups.reduce((s, g) => s + g.channels.length, 0)} channels · from zbefine/iptv` })}
+            {T({ zh: `${groups.reduce((s, g) => s + g.channels.length, 0)} 个频道 · 来自 iptv-org`, en: `${groups.reduce((s, g) => s + g.channels.length, 0)} channels · from iptv-org` })}
           </p>
         </div>
       </div>
