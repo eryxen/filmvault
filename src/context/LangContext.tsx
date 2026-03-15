@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, ReactNode } from 'react'
 import { Lang } from '../i18n/translations'
 
+const STORAGE_KEY = 'yuny_lang' // new key to avoid stale 'en' from old key
+
 interface LangContextType {
   lang: Lang
   setLang: (l: Lang) => void
@@ -11,12 +13,13 @@ const LangContext = createContext<LangContextType | null>(null)
 
 export function LangProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => {
-    return (localStorage.getItem('filmvault_lang') as Lang) || 'zh'
+    // Default: Chinese
+    return (localStorage.getItem(STORAGE_KEY) as Lang) || 'zh'
   })
 
   const setLang = (l: Lang) => {
     setLangState(l)
-    localStorage.setItem('filmvault_lang', l)
+    localStorage.setItem(STORAGE_KEY, l)
   }
 
   const toggle = () => setLang(lang === 'zh' ? 'en' : 'zh')

@@ -228,9 +228,6 @@ export default function VideoPlayer() {
             allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
             referrerPolicy="origin"
             onLoad={() => setLoaded(true)}
-            // sandbox: blocks popup ads & tab hijacking
-            // deliberately OMIT allow-popups, allow-top-navigation
-            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock allow-orientation-lock"
           />
         </div>
 
@@ -297,7 +294,7 @@ export default function VideoPlayer() {
       {/* ── Footer ── */}
       <div className="bg-[#080808] border-t border-white/5 px-4 py-2 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
-          <span className="text-green-500 text-xs">🛡 {lang === 'zh' ? '弹窗广告已屏蔽' : 'Popup ads blocked'}</span>
+          <span className="text-gray-500 text-xs">💡 {lang === 'zh' ? '如有弹窗，点关闭即可继续观看' : 'Close any popups to continue watching'}</span>
           <span className="text-gray-700 text-xs hidden sm:block">·</span>
           <span className="text-gray-600 text-xs hidden sm:block">
             {lang === 'zh' ? `当前线路: ${sources[srcIndex]?.label}` : `Source: ${sources[srcIndex]?.label}`}
