@@ -16,6 +16,15 @@ export default function AnimeCard({ anime }: Props) {
   const { lang } = useLang()
   const T = (key: { zh: string; en: string }) => tr(key, lang)
   const title = anime.title_english || anime.title
+
+  const statusText: Record<string, { zh: string; en: string }> = {
+    'Finished Airing':  { zh: '完结', en: 'Finished' },
+    'Currently Airing': { zh: '连载中', en: 'Airing' },
+    'Not yet aired':    { zh: '未播出', en: 'Not aired' },
+  }
+  const status = anime.status
+    ? (statusText[anime.status] ? statusText[anime.status][lang] : anime.status)
+    : ''
   const inWatchlist = isInWatchlist(anime.mal_id, 'anime')
 
   const handleWatchlist = (e: React.MouseEvent) => {
@@ -102,7 +111,7 @@ export default function AnimeCard({ anime }: Props) {
 
       <div className="mt-2 px-1">
         <p className="text-white text-sm font-semibold truncate">{title}</p>
-        <p className="text-gray-500 text-xs mt-0.5">{anime.year ?? ''}{anime.status ? ` • ${anime.status}` : ''}</p>
+        <p className="text-gray-500 text-xs mt-0.5">{anime.year ?? ''}{status ? ` • ${status}` : ''}</p>
       </div>
     </div>
   )
