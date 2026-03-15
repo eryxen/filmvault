@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import Hls from 'hls.js'
-import { fetchChannels, ChannelGroup, Channel } from '../api/iptv'
+import { fetchChannels, ChannelGroup, Channel, IPTV_REGIONS, IPTVRegion } from '../api/iptv'
 import { useLang } from '../context/LangContext'
 import { tr } from '../i18n/translations'
 
@@ -13,19 +13,23 @@ export default function LiveTV() {
   const [selectedGroup, setSelectedGroup] = useState<string>('')
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null)
   const [error, setError] = useState<string>('')
+  const [region, setRegion] = useState<IPTVRegion>('chinese')
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<Hls | null>(null)
 
   useEffect(() => {
-    fetchChannels()
+    setLoading(true)
+    setSelectedChannel(null)
+    setSelectedGroup('')
+    fetchChannels(region)
       .then(g => {
         setGroups(g)
         if (g.length > 0) setSelectedGroup(g[0].name)
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [])
+  }, [region])
 
   // Play channel
   useEffect(() => {
@@ -94,9 +98,22 @@ export default function LiveTV() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <p className="section-label text-red-400 mb-2">{T({ zh: '直播', en: 'LIVE' })}</p>
           <h1 className="text-4xl font-black text-white mb-2">{T({ zh: '电视直播', en: 'Live TV' })}</h1>
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 text-sm mb-4">
             {T({ zh: `${groups.reduce((s, g) => s + g.channels.length, 0)} 个频道 · 来自 iptv-org`, en: `${groups.reduce((s, g) => s + g.channels.length, 0)} channels · from iptv-org` })}
           </p>
+          {/* Region selector */}
+          <div className="flex gap-2 flex-wrap">
+            {IPTV_REGIONS.map(r => (
+              <button key={r.key} onClick={() => setRegion(r.key)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  region === r.key
+                    ? 'bg-red-500 text-white shadow-lg'
+                    : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 border border-white/5'
+                }`}>
+                {lang === 'zh' ? r.label.zh : r.label.en}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
