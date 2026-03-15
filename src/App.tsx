@@ -12,15 +12,15 @@ import MovieDetail from './pages/MovieDetail'
 import AnimeDetail from './pages/AnimeDetail'
 import Search from './pages/Search'
 import Watchlist from './pages/Watchlist'
+import LiveTV from './pages/LiveTV'
+import YYeTs from './pages/YYeTs'
 
 export default function App() {
   return (
     <LangProvider>
       <WatchlistProvider>
         <PlayerProvider>
-          {/* Global in-app video player modal */}
           <VideoPlayer />
-
           <Navbar />
           <Routes>
             <Route path="/" element={<Home />} />
@@ -32,6 +32,8 @@ export default function App() {
             <Route path="/anime/:id" element={<AnimeDetail />} />
             <Route path="/watchlist" element={<Watchlist />} />
             <Route path="/search" element={<Search />} />
+            <Route path="/live" element={<LiveTV />} />
+            <Route path="/yyets" element={<YYeTs />} />
           </Routes>
         </PlayerProvider>
       </WatchlistProvider>

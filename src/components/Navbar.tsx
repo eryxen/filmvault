@@ -51,6 +51,12 @@ export default function Navbar() {
             <Link to="/anime" className={`text-sm font-medium transition-colors ${isActive('/anime') ? 'text-purple-400' : 'text-gray-400 hover:text-white'}`}>
               {T(t.nav.anime)}
             </Link>
+            <Link to="/live" className={`text-sm font-medium transition-colors ${isActive('/live') ? 'text-red-400' : 'text-gray-400 hover:text-white'}`}>
+              {lang === 'zh' ? '直播' : 'Live TV'}
+            </Link>
+            <Link to="/yyets" className={`text-sm font-medium transition-colors ${isActive('/yyets') ? 'text-orange-400' : 'text-gray-400 hover:text-white'}`}>
+              {lang === 'zh' ? '资源' : 'YYeTs'}
+            </Link>
             <Link to="/watchlist" className={`relative text-sm font-medium transition-colors ${isActive('/watchlist') ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>
               {T(t.nav.watchlist)}
               {watchlist.length > 0 && (
@@ -111,6 +117,8 @@ export default function Navbar() {
           <Link to="/movies" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-blue-400 hover:text-blue-300 py-2">{T(t.nav.movies)}</Link>
           <Link to="/tv" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-green-400 hover:text-green-300 py-2">{T(t.nav.tv)}</Link>
           <Link to="/anime" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-purple-400 hover:text-purple-300 py-2">{T(t.nav.anime)}</Link>
+          <Link to="/live" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-red-400 hover:text-red-300 py-2">📡 {lang === 'zh' ? '电视直播' : 'Live TV'}</Link>
+          <Link to="/yyets" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-orange-400 hover:text-orange-300 py-2">🎬 {lang === 'zh' ? '人人影视' : 'YYeTs'}</Link>
           <Link to="/watchlist" onClick={() => setMenuOpen(false)} className="block text-sm font-medium text-yellow-400 hover:text-yellow-300 py-2">
             🔖 {T(t.nav.watchlist)} {watchlist.length > 0 && `(${watchlist.length})`}
           </Link>
