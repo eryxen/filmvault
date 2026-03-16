@@ -21,6 +21,8 @@ const getSources = (type: string, id: number | string, season = 1, episode = 1):
     { label: 'MultiEmbed',   url: `https://multiembed.mov/?video_id=${id}&tmdb=1` },
     { label: 'VidSrc ICU',   url: `https://vidsrc.icu/embed/movie/${id}` },
     { label: 'MoviesAPI',    url: `https://moviesapi.club/movie/${id}` },
+    { label: 'VidSrc To',   url: `https://vidsrc.to/embed/movie/${id}` },
+    { label: 'Nontongo',    url: `https://nontongo.win/embed/movie/${id}` },
   ]
   if (type === 'tv') return [
     { label: 'VidSrc XYZ',   url: `https://vidsrc.xyz/embed/tv/${id}/${season}/${episode}` },
@@ -31,6 +33,8 @@ const getSources = (type: string, id: number | string, season = 1, episode = 1):
     { label: 'MultiEmbed',   url: `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${season}&e=${episode}` },
     { label: 'VidSrc ICU',   url: `https://vidsrc.icu/embed/tv/${id}/${season}/${episode}` },
     { label: 'MoviesAPI',    url: `https://moviesapi.club/tv/${id}-${season}-${episode}` },
+    { label: 'VidSrc To',   url: `https://vidsrc.to/embed/tv/${id}/${season}/${episode}` },
+    { label: 'Nontongo',    url: `https://nontongo.win/embed/tv/${id}/${season}/${episode}` },
   ]
   if (type === 'anime') return [
     // Tested 2026-03-15 — anime-compatible sources
@@ -162,6 +166,15 @@ export default function VideoPlayer() {
           </div>
         </div>
 
+        {/* Open in new tab */}
+        <a href={sources[srcIndex]?.url} target="_blank" rel="noopener noreferrer"
+          className="flex-shrink-0 flex items-center gap-1 bg-white/8 hover:bg-white/15 text-gray-400 hover:text-white text-sm px-2.5 py-1.5 rounded-lg transition-all border border-white/5"
+          title={lang === 'zh' ? '新标签打开' : 'Open in new tab'}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+
         {/* Close */}
         <button onClick={close}
           className="flex-shrink-0 flex items-center gap-1.5 bg-white/8 hover:bg-red-500/20 hover:text-red-400 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-all border border-white/5 ml-1">
@@ -222,6 +235,13 @@ export default function VideoPlayer() {
               )}
             </div>
           )}
+          {/* Not working hint - always visible after load */}
+          {loaded && srcIndex < sources.length - 1 && (
+            <button onClick={tryNextSource}
+              className="absolute bottom-4 right-4 z-20 bg-black/70 hover:bg-black/90 text-gray-400 hover:text-white text-xs px-3 py-2 rounded-lg transition-all backdrop-blur-sm border border-white/10">
+              {lang === 'zh' ? '没反应？试下一条 →' : 'Not working? Next →'}
+            </button>
+          )}
           <iframe
             key={`${playing.id}-${season}-${episode}-${srcIndex}`}
             src={sources[srcIndex]?.url}
@@ -229,7 +249,7 @@ export default function VideoPlayer() {
             frameBorder="0"
             allowFullScreen
             allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-            referrerPolicy="origin"
+            referrerPolicy="no-referrer"
             onLoad={() => setLoaded(true)}
           />
         </div>
