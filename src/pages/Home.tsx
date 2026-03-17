@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Movie, TvShow, Anime } from '../types'
-import { getTrending, getImageUrl, getTopRatedMovies } from '../api/tmdb'
-import { getTopAnime, getSeasonalAnime } from '../api/jikan'
+import { getTrending, getImageUrl, getRandomDailyMovie, getRandomDailyTv } from '../api/tmdb'
+import { getTopAnime, getSeasonalAnime, getRandomDailyAnime } from '../api/jikan'
 import MovieCard from '../components/MovieCard'
 import AnimeCard from '../components/AnimeCard'
 import SkeletonCard from '../components/SkeletonCard'
@@ -30,21 +30,17 @@ export default function Home() {
   const [heroIndex, setHeroIndex] = useState(0)
   const heroItems = useRef<Movie[]>([])
 
-  const getDailyIndex = (len: number) => {
-    const today = new Date()
-    const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate()
-    return seed % len
-  }
-
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [movies, tv, anime, seasonal, topMovies] = await Promise.all([
+        const [movies, tv, anime, seasonal, randMovie, randTv, randAnime] = await Promise.all([
           getTrending('movie', 'week'),
           getTrending('tv', 'week'),
           getTopAnime(1),
           getSeasonalAnime(),
-          getTopRatedMovies(1),
+          getRandomDailyMovie(),
+          getRandomDailyTv(),
+          getRandomDailyAnime(),
         ])
         const movieList = movies as Movie[]
         const tvList = tv as TvShow[]
@@ -57,10 +53,9 @@ export default function Home() {
         setTopAnime(animeList.slice(0, 12))
         setSeasonalAnime(seasonal.slice(0, 12))
 
-        const topMovieList = (topMovies as unknown as { results: Movie[] }).results || []
-        if (topMovieList.length) setDailyMovie(topMovieList[getDailyIndex(topMovieList.length)])
-        if (tvList.length) setDailyTv(tvList[getDailyIndex(tvList.length)] as TvShow)
-        if (animeList.length) setDailyAnime(animeList[getDailyIndex(animeList.length)])
+        if (randMovie) setDailyMovie(randMovie)
+        if (randTv) setDailyTv(randTv)
+        if (randAnime) setDailyAnime(randAnime)
       } catch (err) {
         console.error('Home fetch error:', err)
       } finally {

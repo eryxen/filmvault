@@ -92,3 +92,44 @@ export const discoverTv = async (genreId?: number, page = 1) => {
   const res = await tmdb.get('/discover/tv', { params })
   return { results: res.data.results as TvShow[], totalPages: res.data.total_pages }
 }
+
+// Daily random picks — deterministic per day, wide pool
+const dateSeed = () => {
+  const d = new Date()
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()
+}
+
+const seededRandom = (seed: number, max: number) => {
+  // Simple hash to spread seed across range
+  let h = seed
+  h = ((h >> 16) ^ h) * 0x45d9f3b
+  h = ((h >> 16) ^ h) * 0x45d9f3b
+  h = (h >> 16) ^ h
+  return (Math.abs(h) % max) + 1
+}
+
+export const getRandomDailyMovie = async (): Promise<Movie | null> => {
+  const seed = dateSeed()
+  const page = seededRandom(seed, 50)
+  const idx = seededRandom(seed * 31, 20) - 1
+  try {
+    const res = await tmdb.get('/discover/movie', {
+      params: { page, sort_by: 'vote_average.desc', 'vote_count.gte': 500 }
+    })
+    const results = res.data.results as Movie[]
+    return results.length ? results[idx % results.length] : null
+  } catch { return null }
+}
+
+export const getRandomDailyTv = async (): Promise<TvShow | null> => {
+  const seed = dateSeed()
+  const page = seededRandom(seed * 7, 30)
+  const idx = seededRandom(seed * 13, 20) - 1
+  try {
+    const res = await tmdb.get('/discover/tv', {
+      params: { page, sort_by: 'vote_average.desc', 'vote_count.gte': 300 }
+    })
+    const results = res.data.results as TvShow[]
+    return results.length ? results[idx % results.length] : null
+  } catch { return null }
+}
