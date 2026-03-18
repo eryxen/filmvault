@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { usePlayer } from '../context/PlayerContext'
 import { useLang } from '../context/LangContext'
 
@@ -69,6 +69,34 @@ export default function VideoPlayer() {
   const maxSources = sources.length
   const [showFailHint, setShowFailHint] = useState(false)
   const [loadTimer, setLoadTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const playerRef = useRef<HTMLDivElement>(null)
+
+  const toggleFullscreen = useCallback(() => {
+    if (!playerRef.current) return
+    if (!document.fullscreenElement) {
+      playerRef.current.requestFullscreen().catch(() => {})
+    } else {
+      document.exitFullscreen().catch(() => {})
+    }
+  }, [])
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', handler)
+    return () => document.removeEventListener('fullscreenchange', handler)
+  }, [])
+
+  // Keyboard: F = fullscreen, Esc = close (when not fullscreen)
+  useEffect(() => {
+    if (!playing) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'f' || e.key === 'F') toggleFullscreen()
+      if (e.key === 'Escape' && !document.fullscreenElement) close()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [playing, toggleFullscreen, close])
 
   const tryNextSource = () => {
     if (srcIndex < sources.length - 1) {
@@ -166,10 +194,25 @@ export default function VideoPlayer() {
           </div>
         </div>
 
+        {/* Fullscreen */}
+        <button onClick={toggleFullscreen}
+          className="flex-shrink-0 flex items-center gap-1 bg-white/8 hover:bg-white/15 text-gray-400 hover:text-white text-sm px-2.5 py-1.5 rounded-lg transition-all border border-white/5"
+          title={lang === 'zh' ? (isFullscreen ? '退出全屏' : '全屏') : (isFullscreen ? 'Exit fullscreen' : 'Fullscreen')}>
+          {isFullscreen ? (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+            </svg>
+          )}
+        </button>
+
         {/* Open in new tab */}
         <a href={sources[srcIndex]?.url} target="_blank" rel="noopener noreferrer"
           className="flex-shrink-0 flex items-center gap-1 bg-white/8 hover:bg-white/15 text-gray-400 hover:text-white text-sm px-2.5 py-1.5 rounded-lg transition-all border border-white/5"
-          title={lang === 'zh' ? '新标签打开' : 'Open in new tab'}>
+          title={lang === 'zh' ? '新标签打开（支持倍速）' : 'Open in new tab (speed control available)'}>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
@@ -188,7 +231,7 @@ export default function VideoPlayer() {
       {/* ── Main ── */}
       <div className="flex flex-1 min-h-0">
         {/* Player */}
-        <div className="flex-1 relative bg-black">
+        <div ref={playerRef} className="flex-1 relative bg-black">
           {!loaded && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-10">
               {!showFailHint ? (
